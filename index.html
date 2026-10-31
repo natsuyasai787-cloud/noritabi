@@ -1,0 +1,596 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NORI-TABI | 乗車記録</title>
+<style>
+:root {
+  --bg:#0b1017;
+  --panel:#151e29;
+  --panel2:#1c2938;
+  --line:#2b3b4d;
+  --text:#edf3fa;
+  --muted:#91a2b5;
+  --blue:#398bd0;
+  --blue2:#245b91;
+  --red:#d65c5c;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;
+}
+header {
+  background:#101a26;border-bottom:1px solid var(--line);
+  padding:17px 20px;display:flex;align-items:center;
+  justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.logo {font-size:23px;font-weight:900;letter-spacing:1px}
+.logo small {display:block;font-size:10px;color:var(--muted);letter-spacing:3px}
+button {
+  border:0;border-radius:8px;padding:10px 14px;
+  color:white;background:var(--blue);font-weight:700;
+  cursor:pointer;font-size:13px;
+}
+button:hover {filter:brightness(1.15)}
+button.secondary {background:var(--panel2);border:1px solid var(--line)}
+button.danger {background:#743b42}
+button.small {padding:6px 9px;font-size:12px}
+input,select,textarea {
+  width:100%;background:#0e1721;color:var(--text);
+  border:1px solid var(--line);border-radius:8px;
+  padding:11px;font:inherit;outline:none;
+}
+input:focus,select:focus,textarea:focus {border-color:var(--blue)}
+label {font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+.field {margin-bottom:13px}
+.container {max-width:1100px;margin:auto;padding:20px}
+.page-title {font-size:21px;font-weight:800;margin:5px 0 16px}
+.muted {color:var(--muted);font-size:12px}
+.panel {
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:13px;padding:16px;margin-bottom:16px;
+}
+.section-head {
+  display:flex;justify-content:space-between;align-items:center;
+  gap:10px;margin-bottom:14px;flex-wrap:wrap;
+}
+.section-head h2 {font-size:16px;margin:0}
+.stats {display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat {background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px}
+.stat strong {display:block;font-size:25px}
+.stat span {font-size:11px;color:var(--muted)}
+.trip-list {display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.trip-card {
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:15px;cursor:pointer;min-width:0;
+}
+.trip-card:hover {border-color:var(--blue)}
+.trip-card h3 {margin:0 0 8px;font-size:16px;overflow-wrap:anywhere}
+.trip-card .dates {font-size:12px;color:var(--muted)}
+.trip-card .count {font-size:12px;margin-top:13px;color:#9fcdf3}
+.toolbar {display:flex;gap:8px;flex-wrap:wrap}
+.calendar-top {display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.calendar-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.weekday {text-align:center;color:var(--muted);font-size:11px;padding:6px}
+.day {
+  min-height:76px;background:#101923;border:1px solid var(--line);
+  border-radius:7px;padding:5px;min-width:0;overflow:hidden;
+}
+.day.other {opacity:.3}
+.day.today {border-color:var(--blue)}
+.day-num {font-size:12px;font-weight:700}
+.event {
+  display:block;background:#245b91;color:white;border-radius:4px;
+  padding:3px;margin-top:4px;font-size:10px;overflow-wrap:anywhere;
+  cursor:pointer;
+}
+.tabs {display:flex;gap:7px;overflow-x:auto;padding-bottom:10px}
+.tab {
+  white-space:nowrap;background:var(--panel2);
+  border:1px solid var(--line);border-radius:8px;
+  padding:10px 13px;font-size:12px;cursor:pointer;
+}
+.tab.active {background:var(--blue2);border-color:var(--blue)}
+.record {
+  padding:13px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;align-items:center;
+}
+.record:last-child {border-bottom:0}
+.record-main {min-width:0}
+.record-time {font-size:12px;color:#9fcdf3;font-weight:700}
+.record-name {font-weight:800;margin:3px 0;overflow-wrap:anywhere}
+.record-route {font-size:12px;color:var(--muted)}
+.record-actions {display:flex;gap:5px;flex-shrink:0}
+.empty {text-align:center;padding:30px 10px;color:var(--muted);font-size:13px}
+.back {margin-bottom:15px}
+.modal {
+  position:fixed;inset:0;background:#000a;display:none;
+  align-items:center;justify-content:center;padding:15px;z-index:10;
+}
+.modal.show {display:flex}
+.modal-box {
+  width:min(520px,100%);max-height:90vh;overflow:auto;
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:20px;
+}
+.modal-box h2 {font-size:18px;margin:0 0 18px}
+.modal-actions {display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+.two {display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.notice {font-size:11px;color:var(--muted);line-height:1.7}
+@media(max-width:600px) {
+  .container {padding:13px}
+  header {padding:14px}
+  .stats {gap:6px}
+  .stat {padding:10px}
+  .stat strong {font-size:20px}
+  .day {min-height:65px;padding:3px}
+  .event {font-size:9px}
+  .record {align-items:flex-start}
+  .record-actions {flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🚃 NORI-TABI<small>MY RAILWAY LOG</small></div>
+  <div class="toolbar">
+    <button class="secondary" onclick="exportData()">バックアップ</button>
+    <button class="secondary" onclick="document.getElementById('importFile').click()">復元</button>
+    <input id="importFile" type="file" accept=".json,application/json" hidden onchange="importData(event)">
+  </div>
+</header>
+
+<main class="container">
+  <div id="app"></div>
+</main>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const KEY = "noritabi_data_v1";
+
+let data = loadData();
+let currentTrip = null;
+let currentDay = null;
+let calendarDate = new Date();
+let editingRecord = null;
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+}
+function loadData() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY));
+    return Array.isArray(saved) ? saved : [];
+  } catch(e) { return []; }
+}
+function save() {
+  localStorage.setItem(KEY,JSON.stringify(data));
+}
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+function dateValue(d) {
+  return String(d || "");
+}
+function formatDate(d) {
+  if(!d) return "日付未設定";
+  const p=d.split("-");
+  return `${Number(p[1])}/${Number(p[2])}`;
+}
+function todayString() {
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function getTrip(id) { return data.find(t=>t.id===id); }
+function getDay(trip,id) { return trip?.days.find(d=>d.id===id); }
+function allRecords(trip) {
+  return trip.days.flatMap(day=>day.records||[]);
+}
+function totalRecords() {
+  return data.reduce((n,t)=>n+allRecords(t).length,0);
+}
+function dateInRange(date,start,end) {
+  return date>=start && date<=end;
+}
+
+function home() {
+  currentTrip=null;
+  currentDay=null;
+  render();
+}
+
+function render() {
+  const app=document.getElementById("app");
+  if(currentTrip) {
+    const trip=getTrip(currentTrip);
+    if(!trip) {home();return;}
+    if(currentDay) {
+      const day=getDay(trip,currentDay);
+      if(!day) {currentDay=null;render();return;}
+      renderDay(trip,day);
+    } else {
+      renderTrip(trip);
+    }
+  } else {
+    renderHome();
+  }
+}
+
+function renderHome() {
+  const app=document.getElementById("app");
+  const count=data.length;
+  app.innerHTML=`
+    <div class="page-title">乗車記録ホーム</div>
+    <div class="stats">
+      <div class="stat"><strong>${count}</strong><span>登録遠征数</span></div>
+      <div class="stat"><strong>${totalRecords()}</strong><span>乗車記録数</span></div>
+      <div class="stat"><strong>${data.reduce((n,t)=>n+t.days.length,0)}</strong><span>中タブ数</span></div>
+    </div>
+    <section class="panel">
+      <div class="section-head">
+        <h2>📅 遠征カレンダー</h2>
+        <div class="toolbar">
+          <button class="secondary small" onclick="changeMonth(-1)">◀</button>
+          <button class="secondary small" onclick="calendarDate=new Date();render()">今日</button>
+          <button class="secondary small" onclick="changeMonth(1)">▶</button>
+        </div>
+      </div>
+      <div class="calendar-top"><strong>${calendarDate.getFullYear()}年 ${calendarDate.getMonth()+1}月</strong></div>
+      ${calendarHTML()}
+      <p class="notice">遠征期間中は、毎日に遠征名が表示されます。予定を選択すると詳細を開けます。</p>
+    </section>
+    <section>
+      <div class="section-head">
+        <h2>📁 遠征一覧（大タブ）</h2>
+        <button onclick="tripForm()">＋ 遠征を追加</button>
+      </div>
+      <div class="trip-list">
+        ${data.length ? data.map(t=>`
+          <div class="trip-card" onclick="openTrip('${t.id}')">
+            <h3>🚆 ${esc(t.title)}</h3>
+            <div class="dates">${formatDate(t.start)} ～ ${formatDate(t.end)}</div>
+            <div class="count">${t.days.length}個の中タブ ／ ${allRecords(t).length}件の乗車記録</div>
+            <div class="toolbar" style="margin-top:12px">
+              <button class="secondary small" onclick="event.stopPropagation();tripForm('${t.id}')">編集</button>
+              <button class="danger small" onclick="event.stopPropagation();deleteTrip('${t.id}')">削除</button>
+            </div>
+          </div>`).join("") :
+          `<div class="panel empty">まだ遠征がありません。<br>「遠征を追加」から作成しよう！</div>`}
+      </div>
+    </section>`;
+}
+
+function changeMonth(n) {
+  calendarDate=new Date(calendarDate.getFullYear(),calendarDate.getMonth()+n,1);
+  render();
+}
+
+function calendarHTML() {
+  const year=calendarDate.getFullYear(),month=calendarDate.getMonth();
+  const first=new Date(year,month,1);
+  const start=new Date(year,month,1-first.getDay());
+  let html='<div class="calendar-grid">';
+  ["日","月","火","水","木","金","土"].forEach(w=>html+=`<div class="weekday">${w}</div>`);
+  for(let i=0;i<42;i++) {
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+    const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    const other=d.getMonth()!==month;
+    const today=iso===todayString();
+    const events=data.filter(t=>dateInRange(iso,t.start,t.end));
+    html+=`<div class="day ${other?"other":""} ${today?"today":""}">
+      <div class="day-num">${d.getDate()}</div>
+      ${events.map(t=>`<span class="event" onclick="openTrip('${t.id}')" title="${esc(t.title)}">${esc(t.title)}</span>`).join("")}
+    </div>`;
+  }
+  return html+'</div>';
+}
+
+function tripForm(id=null) {
+  const t=id?getTrip(id):null;
+  showModal(`
+    <h2>${t?"遠征を編集":"新しい遠征を作成"}</h2>
+    <form onsubmit="saveTrip(event,'${id||""}')">
+      <div class="field"><label>遠征名</label><input name="title" required placeholder="例：博多遠征2026秋" value="${esc(t?.title||"")}"></div>
+      <div class="two">
+        <div class="field"><label>開始日</label><input type="date" name="start" required value="${t?.start||todayString()}"></div>
+        <div class="field"><label>終了日</label><input type="date" name="end" required value="${t?.end||todayString()}"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" onclick="closeModal()">キャンセル</button>
+        <button type="submit">保存</button>
+      </div>
+    </form>`);
+}
+
+function saveTrip(e,id) {
+  e.preventDefault();
+  const f=new FormData(e.target);
+  const title=f.get("title").trim(),start=f.get("start"),end=f.get("end");
+  if(end<start) {alert("終了日は開始日以降にしてください");return;}
+  if(id) {
+    const t=getTrip(id);
+    Object.assign(t,{title,start,end});
+  } else {
+    data.push({id:uid(),title,start,end,days:[]});
+  }
+  save();closeModal();render();
+}
+
+function deleteTrip(id) {
+  const t=getTrip(id);
+  if(!confirm(`「${t.title}」を削除しますか？\n中の乗車記録もすべて削除されます。`))return;
+  data=data.filter(x=>x.id!==id);
+  save();render();
+}
+
+function openTrip(id) {
+  currentTrip=id;currentDay=null;render();
+}
+
+function renderTrip(trip) {
+  const app=document.getElementById("app");
+  app.innerHTML=`
+    <button class="secondary back" onclick="home()">← ホームに戻る</button>
+    <div class="page-title">📁 ${esc(trip.title)}</div>
+    <div class="panel">
+      <div class="section-head">
+        <h2>遠征情報</h2>
+        <button class="secondary small" onclick="tripForm('${trip.id}')">遠征を編集</button>
+      </div>
+      <div class="muted">期間：${formatDate(trip.start)} ～ ${formatDate(trip.end)}</div>
+      <div class="muted" style="margin-top:6px">乗車記録：${allRecords(trip).length}件</div>
+    </div>
+    <div class="section-head">
+      <h2>📑 中タブ（乗車日・乗車電）</h2>
+      <button onclick="dayForm()">＋ 中タブを追加</button>
+    </div>
+    <div class="tabs">
+      ${trip.days.map(d=>`<div class="tab" onclick="openDay('${d.id}')">${esc(d.name)}</div>`).join("")}
+    </div>
+    <div class="panel">
+      ${trip.days.length?trip.days.map(d=>`
+        <div class="record">
+          <div class="record-main">
+            <div class="record-name">${esc(d.name)}</div>
+            <div class="record-route">${formatDate(d.date)} ／ ${d.records.length}件</div>
+          </div>
+          <div class="record-actions">
+            <button class="small" onclick="openDay('${d.id}')">開く</button>
+            <button class="secondary small" onclick="dayForm('${d.id}')">編集</button>
+            <button class="danger small" onclick="deleteDay('${d.id}')">削除</button>
+          </div>
+        </div>`).join(""):
+        `<div class="empty">中タブがまだありません。<br>「中タブを追加」から作成してください。</div>`}
+    </div>`;
+}
+
+function dayForm(id=null) {
+  const trip=getTrip(currentTrip);
+  const d=id?getDay(trip,id):null;
+  showModal(`
+    <h2>${d?"中タブを編集":"中タブを追加"}</h2>
+    <form onsubmit="saveDay(event,'${id||""}')">
+      <div class="field"><label>タブ名</label><input name="name" required placeholder="例：1日目乗車電" value="${esc(d?.name||"")}"></div>
+      <div class="field"><label>乗車日</label><input type="date" name="date" required value="${d?.date||trip.start}"></div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" onclick="closeModal()">キャンセル</button>
+        <button type="submit">保存</button>
+      </div>
+    </form>`);
+}
+
+function saveDay(e,id) {
+  e.preventDefault();
+  const trip=getTrip(currentTrip),f=new FormData(e.target);
+  const name=f.get("name").trim(),date=f.get("date");
+  if(id) {
+    Object.assign(getDay(trip,id),{name,date});
+  } else {
+    trip.days.push({id:uid(),name,date,records:[]});
+  }
+  save();closeModal();render();
+}
+
+function deleteDay(id) {
+  const trip=getTrip(currentTrip),d=getDay(trip,id);
+  if(!confirm(`「${d.name}」と中の乗車記録を削除しますか？`))return;
+  trip.days=trip.days.filter(x=>x.id!==id);
+  save();render();
+}
+
+function openDay(id) {
+  currentDay=id;render();
+}
+
+function renderDay(trip,day) {
+  const app=document.getElementById("app");
+  const records=[...day.records].sort((a,b)=>
+    (a.date+a.time).localeCompare(b.date+b.time));
+  app.innerHTML=`
+    <button class="secondary back" onclick="currentDay=null;render()">← ${esc(trip.title)}に戻る</button>
+    <div class="page-title">${esc(day.name)}</div>
+    <div class="panel">
+      <div class="section-head">
+        <h2>${esc(trip.title)}</h2>
+        <button class="secondary small" onclick="dayForm('${day.id}')">中タブを編集</button>
+      </div>
+      <div class="muted">乗車日：${formatDate(day.date)}</div>
+      <div class="muted">${records.length}件の乗車記録</div>
+    </div>
+    <div class="toolbar" style="margin-bottom:14px">
+      <button onclick="recordForm()">＋ 手動で登録</button>
+      <button class="secondary" onclick="templateForm()">＋ テンプレートで一括登録</button>
+    </div>
+    <section class="panel">
+      <div class="section-head"><h2>🚆 乗車電一覧</h2></div>
+      ${records.length?records.map(r=>`
+        <div class="record">
+          <div class="record-main">
+            <div class="record-time">${formatDate(r.date)} ${esc(r.time)}</div>
+            <div class="record-name">${esc(r.number)} ${esc(r.name)}</div>
+            <div class="record-route">${esc(r.destination)} ／ ${esc(r.from)} → ${esc(r.to)}</div>
+            ${r.memo?`<div class="muted">メモ：${esc(r.memo)}</div>`:""}
+          </div>
+          <div class="record-actions">
+            <button class="secondary small" onclick="recordForm('${r.id}')">編集</button>
+            <button class="danger small" onclick="deleteRecord('${r.id}')">削除</button>
+          </div>
+        </div>`).join(""):
+        `<div class="empty">乗車記録がありません。<br>最初の乗車電を登録しよう！</div>`}
+    </section>`;
+}
+
+function recordForm(id=null) {
+  const trip=getTrip(currentTrip),day=getDay(trip,currentDay);
+  const r=id?day.records.find(x=>x.id===id):null;
+  editingRecord=id;
+  showModal(`
+    <h2>${r?"乗車記録を編集":"乗車電を登録"}</h2>
+    <form onsubmit="saveRecord(event,'${id||""}')">
+      <div class="two">
+        <div class="field"><label>乗車日</label><input name="date" type="date" required value="${r?.date||day.date}"></div>
+        <div class="field"><label>時刻</label><input name="time" type="time" required value="${r?.time||"07:22"}"></div>
+      </div>
+      <div class="field"><label>列車番号</label><input name="number" placeholder="例：3008M" value="${esc(r?.number||"")}"></div>
+      <div class="field"><label>列車名</label><input name="name" required placeholder="例：特急ソニック8号" value="${esc(r?.name||"")}"></div>
+      <div class="field"><label>行先</label><input name="destination" placeholder="例：博多行き" value="${esc(r?.destination||"")}"></div>
+      <div class="two">
+        <div class="field"><label>乗車駅</label><input name="from" required placeholder="別府" value="${esc(r?.from||"")}"></div>
+        <div class="field"><label>降車駅</label><input name="to" required placeholder="中津" value="${esc(r?.to||"")}"></div>
+      </div>
+      <div class="field"><label>メモ（任意）</label><textarea name="memo" rows="2" placeholder="車両・編成・感想など">${esc(r?.memo||"")}</textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" onclick="closeModal()">キャンセル</button>
+        <button type="submit">保存</button>
+      </div>
+    </form>`);
+}
+
+function saveRecord(e,id) {
+  e.preventDefault();
+  const trip=getTrip(currentTrip),day=getDay(trip,currentDay);
+  const f=new FormData(e.target);
+  const record={
+    id:id||uid(),
+    date:f.get("date"),time:f.get("time"),
+    number:f.get("number").trim(),
+    name:f.get("name").trim(),
+    destination:f.get("destination").trim(),
+    from:f.get("from").trim(),to:f.get("to").trim(),
+    memo:f.get("memo").trim()
+  };
+  if(id) {
+    const i=day.records.findIndex(x=>x.id===id);
+    day.records[i]=record;
+  } else day.records.push(record);
+  save();closeModal();render();
+}
+
+function deleteRecord(id) {
+  const day=getDay(getTrip(currentTrip),currentDay);
+  if(!confirm("この乗車記録を削除しますか？"))return;
+  day.records=day.records.filter(r=>r.id!==id);
+  save();render();
+}
+
+function templateForm() {
+  const day=getDay(getTrip(currentTrip),currentDay);
+  showModal(`
+    <h2>テンプレートで一括登録</h2>
+    <p class="notice">1行につき1件登録できます。以下の順番で入力してください。<br>時刻｜列車番号｜列車名｜行先｜乗車駅｜降車駅<br>例：07:22｜3008M｜特急ソニック8号｜博多行き｜別府｜中津</p>
+    <form onsubmit="saveTemplate(event)">
+      <div class="field">
+        <label>乗車日（全件共通）</label>
+        <input type="date" name="date" required value="${day.date}">
+      </div>
+      <div class="field">
+        <label>乗車記録（複数行OK）</label>
+        <textarea name="lines" rows="8" required placeholder="07:22｜3008M｜特急ソニック8号｜博多行き｜別府｜中津&#10;09:00｜XXXXM｜特急列車｜大分行き｜中津｜小倉"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" onclick="closeModal()">キャンセル</button>
+        <button type="submit">まとめて登録</button>
+      </div>
+    </form>`);
+}
+
+function saveTemplate(e) {
+  e.preventDefault();
+  const day=getDay(getTrip(currentTrip),currentDay);
+  const f=new FormData(e.target);
+  const date=f.get("date");
+  const lines=f.get("lines").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const newRecords=[];
+  for(let i=0;i<lines.length;i++) {
+    const p=lines[i].split(/[｜|]/).map(x=>x.trim());
+    if(p.length!==6 || !/^\d{2}:\d{2}$/.test(p[0])) {
+      alert(`${i+1}行目の形式が違います。\n時刻｜列車番号｜列車名｜行先｜乗車駅｜降車駅`);
+      return;
+    }
+    newRecords.push({
+      id:uid(),date,time:p[0],number:p[1],
+      name:p[2],destination:p[3],from:p[4],to:p[5],memo:""
+    });
+  }
+  day.records.push(...newRecords);
+  save();closeModal();render();
+}
+
+function showModal(html) {
+  document.getElementById("modalContent").innerHTML=html;
+  document.getElementById("modal").classList.add("show");
+}
+function closeModal() {
+  document.getElementById("modal").classList.remove("show");
+}
+
+function exportData() {
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="noritabi-backup.json";a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try {
+      const imported=JSON.parse(reader.result);
+      if(!Array.isArray(imported) || !imported.every(t=>
+        t && typeof t.id==="string" && typeof t.title==="string" &&
+        typeof t.start==="string" && typeof t.end==="string" &&
+        Array.isArray(t.days) && t.days.every(d=>
+          d && typeof d.id==="string" && typeof d.name==="string" &&
+          typeof d.date==="string" && Array.isArray(d.records) &&
+          d.records.every(r=>r && typeof r.id==="string")
+        )
+      )) throw new Error("形式が違います");
+      if(!confirm("現在のデータを復元データで置き換えますか？"))return;
+      data=imported;save();home();
+      alert("復元しました！");
+    } catch(e) {
+      alert("ファイルを読み込めませんでした。正しいバックアップファイルか確認してください。");
+    }
+  };
+  reader.readAsText(file);
+  event.target.value="";
+}
+
+render();
+</script>
+</body>
+</html>
